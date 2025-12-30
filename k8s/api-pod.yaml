@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: api
+  labels:
+    app: api
+    tier: server
+spec:
+  containers:
+  - name: api
+    image: <your-dockerhub-username>/contacts-api:v1
+    Image pull policy: Always
+    ports:
+      - containerPort: 8000
+#    command: ['sh', '-c', 'echo Connecting to postgres-service:5432 && sleep 3600']
+    env:
+    - name: MONGO_HOST
+      value: "mongodb-service"
+    - name: MONGO_PORT
+      value: "27017"
+    - name: MONGO_DB
+      value: "contactsdb"
+
