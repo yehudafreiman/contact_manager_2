@@ -21,7 +21,6 @@ class Contact:
         }
 
 
-
 # Read from environment variables
 MONGO_HOST = os.getenv("MONGO_HOST", "localhost")
 MONGO_PORT = os.getenv("MONGO_PORT", "27017")
