@@ -1,12 +1,12 @@
-import mysql.connector
 import os
-from dotenv import load_dotenv
+from selectors import SelectSelector
 
-load_dotenv()
+from pymongo import MongoClient
+from bson import ObjectId
 
 # initial a contact
 class Contact:
-    def __init__(self, id: int, first_name: str, last_name: str, phone_number: str):
+    def __init__(self, id: str, first_name: str, last_name: str, phone_number: str):
         self.id = id
         self.first_name = first_name
         self.last_name = last_name
@@ -21,138 +21,49 @@ class Contact:
             "phone_number": self.phone_number
         }
 
+# Read from environment variables
+MONGO_HOST = os.getenv("MONGO_HOST", "localhost")
+MONGO_PORT = os.getenv("MONGO_PORT", "27017")
+MONGO_DB = os.getenv("MONGO_DB", "contactsdb")
 
-# create database connection
-def get_db_connection():
-    connection = mysql.connector.connect(
-        host=os.getenv("DB_HOST", "db"),
-        port=int(os.getenv("DB_PORT", 3306)),
-        user=os.getenv("DB_USER", "root"),
-        password=os.getenv("DB_PASSWORD", "mysqlmysql"),
-        database=os.getenv("DB_NAME", "contacts")
-    )
-    return connection
+# Create connection
+client = MongoClient(f"mongodb://{MONGO_HOST}:{MONGO_PORT}/")
 
+# Access database
+db = client.MONGO_DB
+
+# Access collection
+collection = db.contacts
 
 # create new contact
-def create_contact(contact_data: dict) -> int:
-    connection = get_db_connection()
-    cursor = connection.cursor()
-
-    query = """INSERT INTO contacts (first_name, last_name, phone_number) \
-               VALUES (%s, %s, %s)"""
-    cursor.execute(query, (
-        contact_data["first_name"],
-        contact_data["last_name"],
-        contact_data["phone_number"]
-    ))
-
-    connection.commit()
-    new_id = cursor.lastrowid
-    cursor.close()
-    connection.close()
-    return new_id
-
-
-# get all contacts
-def get_all_contacts() -> list[Contact]:
-    connection = get_db_connection()
-    cursor = connection.cursor()
-
-    query = "SELECT id, first_name, last_name, phone_number FROM contacts"
-    cursor.execute(query)
-
-    results = cursor.fetchall()
-    contacts = [Contact(id=row[0], first_name=row[1], last_name=row[2], phone_number=row[3]) for row in results]
-
-    cursor.close()
-    connection.close()
-    return contacts
-
+contact = {
+    "first_name": "John",
+    "last_name": "Doe",
+    "phone_number": "+1-555-0105"
+}
+if collection.find_one({"phone_number": contact["phone_number"]}):
+    print("Contact with this phone_number already exists")
+else:
+    result = collection.insert_one(contact)
+    print(f"Inserted ID: {result.inserted_id}")
 
 # update a contact
-def update_contact(contact_id: str, contact_data: dict) -> bool:
-    connection = get_db_connection()
-    cursor = connection.cursor()
-
-    updates = []
-    params = []
-
-    # Build dynamic UPDATE query based on provided fields
-    if "first_name" in contact_data and contact_data["first_name"] is not None:
-        updates.append("first_name = %s")
-        params.append(contact_data["first_name"])
-    if "last_name" in contact_data and contact_data["last_name"] is not None:
-        updates.append("last_name = %s")
-        params.append(contact_data["last_name"])
-    if "phone_number" in contact_data and contact_data["phone_number"] is not None:
-        updates.append("phone_number = %s")
-        params.append(contact_data["phone_number"])
-
-    if not updates:
-        cursor.close()
-        connection.close()
-        return False
-
-    params.append(contact_id)
-
-    query = f"UPDATE contacts SET {', '.join(updates)} WHERE id = %s"
-    cursor.execute(query, params)
-
-    connection.commit()
-    success = cursor.rowcount > 0
-    cursor.close()
-    connection.close()
-    return success
-
+filter_query = {"_id": ObjectId("6953d5c6306d829f084008b4")}
+update_data = {"$set": {"phone_number": "+1-555-0103"}}
+if collection.find_one({"phone_number": "+1-555-0103"}):
+    print("Contact with this phone_number already exists")
+else:
+    result = collection.update_one(filter_query, update_data)
+    print(f"Matched: {result.matched_count}, Modified: {result.modified_count}")
 
 # delete a contact
-def delete_contact(contact_id: str) -> bool:
-    connection = get_db_connection()
-    cursor = connection.cursor()
+result = collection.delete_one({"name": "John Doe"})
+print(f"Deleted count: {result.deleted_count}")
 
-    query = "DELETE FROM contacts WHERE id = %s"
-    cursor.execute(query, (contact_id,))
+# get all contacts
+contacts = collection.find()
+for contact in contacts:
+    print(contact)
 
-    connection.commit()
-    success = cursor.rowcount > 0
-    cursor.close()
-    connection.close()
-    return success
-
-
-# import os
-# from pymongo import MongoClient
-#
-# # Read from environment variables (set in Kubernetes Pod)
-#
-# MONGO_HOST = os.getenv("MONGO_HOST", "localhost")
-#
-# MONGO_PORT = os.getenv("MONGO_PORT", "27017")
-#
-# MONGO_DB = os.getenv("MONGO_DB", "contactsdb")
-#
-# # Create connection
-#
-# client = MongoClient(f"mongodb://{MONGO_HOST}:{MONGO_PORT}/")
-#
-# db = client[MONGO_DB]
-#
-# contacts_collection = db["contacts"]
-#
-# Converting ObjectId for API responses:
-#
-# from bson import ObjectId
-#
-# def contact_to_dict(contact):
-#     return {
-#
-#             "id": str(contact\["\_id"\]),   \  # Convert ObjectId to string
-#
-#             "first\_name": contact\["first\_name"\],
-#
-#             "last\_name": contact\["last\_name"\],
-#
-#             "phone\_number": contact\["phone\_number"\]
-#
-#             }
+# Close Connection
+client.close()
