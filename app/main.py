@@ -25,7 +25,7 @@ def get_all_contacts():
 
 # PUT - update existing contact
 @app.put("/contacts/{contact_id}")
-def update_existing_contact(contact_id: int, update: models.ContactUpdate):
+def update_existing_contact(contact_id: str, update: models.ContactUpdate):
     update_dict = update.model_dump(exclude_none=True)
 
     success = data_interactor.update_contact(contact_id, update_dict)
@@ -37,7 +37,7 @@ def update_existing_contact(contact_id: int, update: models.ContactUpdate):
 
 # DELETE - delete contact
 @app.delete("/contacts/{contact_id}")
-def delete_contact(contact_id: int):
+def delete_contact(contact_id: str):
     success = data_interactor.delete_contact(contact_id)
     if not success:
         raise HTTPException(status_code=404, detail="Contact not found")
