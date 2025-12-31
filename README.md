@@ -124,6 +124,29 @@ Delete a non-existent contact (should return 404):
 curl -X DELETE <API_URL>/contacts/000000000000000000000000
 ```
 
+### Test 7: Verify Duplicate Phone Number Handling
+
+Create a contact:
+```bash
+curl -X POST <API_URL>/contacts \
+  -H "Content-Type: application/json" \
+  -d '{"first_name": "Jane", "last_name": "Smith", "phone_number": "+1-555-1111"}'
+```
+
+Try to create another contact with the same phone number (should fail):
+```bash
+curl -X POST <API_URL>/contacts \
+  -H "Content-Type: application/json" \
+  -d '{"first_name": "Bob", "last_name": "Brown", "phone_number": "+1-555-1111"}'
+```
+
+Try to update an existing contact to a phone number that already exists (should fail):
+```bash
+curl -X PUT <API_URL>/contacts/<CONTACT_ID> \
+  -H "Content-Type: application/json" \
+  -d '{"phone_number": "+1-555-1111"}'
+```
+
 ## Project Structure
 
 ```
