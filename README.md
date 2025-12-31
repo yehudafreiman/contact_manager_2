@@ -22,8 +22,8 @@ A REST API for managing contacts, built with FastAPI and MongoDB, orchestrated w
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yehudafreiman/contact_manager_k8s.git
-cd contact_manager_k8s
+git clone https://github.com/yehudafreiman/contact_manager_2.git
+cd contact_manager_2
 ```
 
 ### 2. Build and Push Docker Image
