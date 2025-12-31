@@ -1,7 +1,9 @@
 import os
 from pymongo import MongoClient
 from bson import ObjectId
+from dotenv import load_dotenv
 
+load_dotenv()
 
 # initial a contact
 class Contact:
@@ -22,9 +24,9 @@ class Contact:
 
 
 # Read from environment variables
-MONGO_HOST = os.getenv("MONGO_HOST", "localhost")
-MONGO_PORT = os.getenv("MONGO_PORT", "27017")
-MONGO_DB = os.getenv("MONGO_DB", "contactsdb")
+MONGO_HOST = os.getenv("MONGO_HOST")
+MONGO_PORT = os.getenv("MONGO_PORT")
+MONGO_DB = os.getenv("MONGO_DB")
 
 # Create connection
 client = MongoClient(f"mongodb://{MONGO_HOST}:{MONGO_PORT}/")
@@ -40,12 +42,12 @@ def create_contact(contact_data: dict) -> str:
     return str(new_contact.inserted_id)
 
 
-# update a contact
 def update_contact(contact_id: str, contact_data: dict) -> bool:
     new_phone = contact_data.get("phone_number")
-    if new_phone and collection.find_one({"phone_number": new_phone}):
-        print("Contact with this phone_number already exists")
-        return False
+    if new_phone:
+        existing = collection.find_one({"phone_number": new_phone, "_id": {"$ne": ObjectId(contact_id)}})
+        if existing:
+            return False
     result = collection.update_one(
         {"_id": ObjectId(contact_id)},
         {"$set": contact_data}
