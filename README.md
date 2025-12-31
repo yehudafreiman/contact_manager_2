@@ -19,49 +19,54 @@ A REST API for managing contacts, built with FastAPI and MongoDB, orchestrated w
 
 ## Setup Instructions
 
-### 1. Start minikube
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/yehudafreiman/contact_manager_k8s.git
+cd contact_manager_k8s
+```
+
+### 2. Build and Push Docker Image
+
+```bash
+cd app
+docker build -t yehudafreiman/contacts-api:v1 .
+docker login
+docker push yehudafreiman/contacts-api:v1
+cd ..
+```
+
+### 3. Start Kubernetes Cluster
 
 ```bash
 minikube start
 ```
 
-### 2. Build Docker Image
-
-```bash
-cd app
-docker build -t yehudafreiman/contacts-api:v1 .
-```
-
-### 3. Push to Docker Hub
-
-```bash
-docker login
-docker push yehudafreiman/contacts-api:v1
-```
-
-### 4. Deploy MongoDB
+### 4. Deploy All Resources
 
 ```bash
 kubectl apply -f k8s/mongodb-pod.yaml
 kubectl apply -f k8s/mongodb-service.yaml
-```
-
-### 5. Deploy the API
-
-```bash
 kubectl apply -f k8s/api-pod.yaml
 kubectl apply -f k8s/api-service.yaml
 ```
 
-### 6. Verify Pods are Running
+### 5. Wait for Pods to be Ready
+
+Wait 30-60 seconds, then verify both pods show "Running" status:
 
 ```bash
 kubectl get pods
 ```
 
-Wait until both Pods show `Running` status.
+Expected output:
+```
+NAME      READY   STATUS    RESTARTS   AGE
+api       1/1     Running   0          30s
+mongodb   1/1     Running   0          45s
+```
 
-### 7. Get the API URL
+### 6. Get the API URL
 
 ```bash
 minikube service api-service --url
@@ -71,13 +76,13 @@ minikube service api-service --url
 
 Replace `<API_URL>` with the URL from the previous command.
 
-### GET - Get all contacts
+### Test 1: GET - Get all contacts (should return empty list initially)
 
 ```bash
 curl <API_URL>/contacts
 ```
 
-### POST - Create a new contact
+### Test 2: POST - Create a new contact
 
 ```bash
 curl -X POST <API_URL>/contacts \
@@ -85,7 +90,13 @@ curl -X POST <API_URL>/contacts \
   -d '{"first_name": "John", "last_name": "Doe", "phone_number": "+1-555-0101"}'
 ```
 
-### PUT - Update a contact
+### Test 3: GET - Get all contacts again (should show the created contact)
+
+```bash
+curl <API_URL>/contacts
+```
+
+### Test 4: PUT - Update the contact
 
 ```bash
 curl -X PUT <API_URL>/contacts/<CONTACT_ID> \
@@ -93,10 +104,24 @@ curl -X PUT <API_URL>/contacts/<CONTACT_ID> \
   -d '{"phone_number": "+1-555-9999"}'
 ```
 
-### DELETE - Delete a contact
+### Test 5: DELETE - Delete the contact
 
 ```bash
 curl -X DELETE <API_URL>/contacts/<CONTACT_ID>
+```
+
+### Test 6: Verify Error Handling
+
+Update a non-existent contact (should return 404):
+```bash
+curl -X PUT <API_URL>/contacts/000000000000000000000000 \
+  -H "Content-Type: application/json" \
+  -d '{"phone_number": "+1-555-0000"}'
+```
+
+Delete a non-existent contact (should return 404):
+```bash
+curl -X DELETE <API_URL>/contacts/000000000000000000000000
 ```
 
 ## Project Structure
