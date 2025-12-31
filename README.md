@@ -1,36 +1,126 @@
-1.Project Description – What the project does + API endpoints
+# Contact Manager API
 
-2.Prerequisites:
-    Docker
-    Minikube (or other local Kubernetes)
-    kubectl
+A REST API for managing contacts, built with FastAPI and MongoDB, orchestrated with Kubernetes.
 
-3.Setup Instructions – How to build and deploy
+## API Endpoints
 
-4.Testing Instructions – curl commands for each endpoint
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/contacts` | Get all contacts |
+| POST | `/contacts` | Create a new contact |
+| PUT | `/contacts/{id}` | Update an existing contact |
+| DELETE | `/contacts/{id}` | Delete a contact |
 
+## Prerequisites
 
+- Docker
+- minikube (or other local Kubernetes)
+- kubectl
 
+## Setup Instructions
 
+### 1. Start minikube
 
-Students should research and include the appropriate CLI commands in their README.md for:
+```bash
+minikube start
+```
 
-Docker Commands:
-Login to Docker Hub
-Build Docker images
-Push images to registry
+### 2. Build Docker Image
 
-Kubernetes Commands:
-Apply/create resources from YAML files
-Get/list resources (pods, services)
-View pod logs
-Describe resources for debugging
-Delete resources
+```bash
+cd app
+docker build -t yehudafreiman/contacts-api:v1 .
+```
 
-Minikube Commands:
-Start/stop cluster
-Get service URLs
-Get cluster IP address
+### 3. Push to Docker Hub
 
-Testing Commands:
-Make HTTP requests to test API endpoints (GET, POST, PUT, DELETE)
+```bash
+docker login
+docker push yehudafreiman/contacts-api:v1
+```
+
+### 4. Deploy MongoDB
+
+```bash
+kubectl apply -f k8s/mongodb-pod.yaml
+kubectl apply -f k8s/mongodb-service.yaml
+```
+
+### 5. Deploy the API
+
+```bash
+kubectl apply -f k8s/api-pod.yaml
+kubectl apply -f k8s/api-service.yaml
+```
+
+### 6. Verify Pods are Running
+
+```bash
+kubectl get pods
+```
+
+Wait until both Pods show `Running` status.
+
+### 7. Get the API URL
+
+```bash
+minikube service api-service --url
+```
+
+## Testing Instructions
+
+Replace `<API_URL>` with the URL from the previous command.
+
+### GET - Get all contacts
+
+```bash
+curl <API_URL>/contacts
+```
+
+### POST - Create a new contact
+
+```bash
+curl -X POST <API_URL>/contacts \
+  -H "Content-Type: application/json" \
+  -d '{"first_name": "John", "last_name": "Doe", "phone_number": "+1-555-0101"}'
+```
+
+### PUT - Update a contact
+
+```bash
+curl -X PUT <API_URL>/contacts/<CONTACT_ID> \
+  -H "Content-Type: application/json" \
+  -d '{"phone_number": "+1-555-9999"}'
+```
+
+### DELETE - Delete a contact
+
+```bash
+curl -X DELETE <API_URL>/contacts/<CONTACT_ID>
+```
+
+## Project Structure
+
+```
+week11_k8s_contacts/
+├── README.md
+├── .gitignore
+├── app/
+│   ├── Dockerfile
+│   ├── main.py
+│   ├── data_interactor.py
+│   ├── models.py
+│   └── requirements.txt
+└── k8s/
+    ├── mongodb-pod.yaml
+    ├── mongodb-service.yaml
+    ├── api-pod.yaml
+    └── api-service.yaml
+```
+
+## Cleanup
+
+```bash
+kubectl delete -f k8s/
+minikube stop
+```
